@@ -6,6 +6,7 @@ import {
   type Token,
 } from "./reading";
 import { t } from "./shared";
+import { sanitizeCardHtml } from "./card-html";
 
 type Rating = "again" | "hard" | "good" | "easy";
 type QueueItem = { token: Token; cardId: string };
@@ -28,29 +29,6 @@ const ratingNames: Record<Rating, string> = {
   good: "reviewGood",
   easy: "reviewEasy",
 };
-
-function appendSanitizedHtml(target: HTMLElement, html: string) {
-  const parsed = new DOMParser().parseFromString(html, "text/html");
-  parsed
-    .querySelectorAll(
-      "script,style,iframe,object,embed,link,audio,video,base",
-    )
-    .forEach((element) => element.remove());
-  for (const element of Array.from(parsed.querySelectorAll("*"))) {
-    for (const attribute of Array.from(element.attributes)) {
-      if (
-        /^on/i.test(attribute.name) ||
-        /javascript\s*:/i.test(attribute.value)
-      )
-        element.removeAttribute(attribute.name);
-    }
-  }
-  target.replaceChildren(
-    ...Array.from(parsed.body.childNodes, (node) =>
-      document.importNode(node, true),
-    ),
-  );
-}
 
 export function createReviewUI(
   root: ShadowRoot,
@@ -173,7 +151,7 @@ export function createReviewUI(
     const question = document.createElement("div");
     question.id = "voka-review-question";
     question.className = "review-question";
-    appendSanitizedHtml(question, rendered.questionHtml);
+    question.replaceChildren(sanitizeCardHtml(rendered.questionHtml));
     view.append(question);
     if (!revealed && !sentenceOnBack) appendSentence(view);
 
@@ -192,7 +170,7 @@ export function createReviewUI(
       const answer = document.createElement("div");
       answer.id = "voka-review-answer";
       answer.className = "review-answer";
-      appendSanitizedHtml(answer, rendered.answerHtml);
+      answer.replaceChildren(sanitizeCardHtml(rendered.answerHtml));
       view.append(answer);
       if (sentenceOnBack) appendSentence(view);
 
