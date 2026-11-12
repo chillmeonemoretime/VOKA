@@ -14,6 +14,7 @@
     "check:highlight": "tsx scripts/check-highlight.ts",
     "check:manual": "tsx scripts/check-manual.ts",
     "check:review": "tsx scripts/check-review.ts",
+    "check:review-gloss": "tsx scripts/check-review-gloss.ts",
     "check:dynamic": "tsx scripts/check-dynamic.ts",
     "check:due": "tsx scripts/check-due-today.ts",
     "check:practice": "tsx scripts/check-practice.ts",

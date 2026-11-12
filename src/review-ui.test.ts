@@ -2,6 +2,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import type { ReadingSettings, Token } from "./reading";
 import { createReviewUI } from "./review-ui";
+import { scopedGlossCss } from "./gloss-rules";
 
 const config: ReadingSettings = {
   nativeLanguage: "en",
@@ -11,12 +12,15 @@ const config: ReadingSettings = {
   hoverScope: "highlighted",
 };
 
-function setup(sendMessage = vi.fn(async (_message: { type: string }) => ({
-  data: {
-    questionHtml: "<div>benefit</div>",
-    answerHtml: "<div>an advantage</div>",
-  },
-}))) {
+function setup(
+  sendMessage = vi.fn(async (_message: { type: string }) => ({
+    data: {
+      questionHtml: "<div>benefit</div>",
+      answerHtml: "<div>an advantage</div>",
+    },
+  })),
+  settings: ReadingSettings = config,
+) {
   document.body.innerHTML = "<p>A benefit is useful.</p>";
   const text = document.querySelector("p")!.firstChild!;
   const range = document.createRange();
@@ -66,8 +70,8 @@ function setup(sendMessage = vi.fn(async (_message: { type: string }) => ({
         })[key] ?? key,
     },
   });
-  const ui = createReviewUI(root, () => config, onReturnToList, onRefresh);
-  return { ui, token, sendMessage, onReturnToList };
+  const ui = createReviewUI(root, () => settings, onReturnToList, onRefresh);
+  return { ui, token, sendMessage, onReturnToList, root };
 }
 
 async function flush() {
@@ -98,6 +102,65 @@ it("shows the practice label and no rating buttons after revealing the answer", 
   );
   expect(ui.element.querySelectorAll("[data-review-rating]")).toHaveLength(0);
   expect(ui.element.querySelector('[data-practice-action="next"]')).not.toBeNull();
+});
+
+it("uses the target gloss for English native language", async () => {
+  const { ui, token } = setup(undefined, {
+    ...config,
+    nativeLanguage: "en",
+    glossLanguage: "native",
+  });
+  ui.practice(token, "card-1");
+  await flush();
+  ui.element
+    .querySelector<HTMLButtonElement>('[data-practice-action="show-answer"]')!
+    .click();
+
+  expect(
+    ui.element.querySelector<HTMLElement>("#voka-review-answer")?.dataset.gloss,
+  ).toBe("target");
+});
+
+it("uses the native gloss when native is selected", async () => {
+  const { ui, token } = setup(undefined, {
+    ...config,
+    nativeLanguage: "zh",
+    glossLanguage: "native",
+  });
+  ui.practice(token, "card-1");
+  await flush();
+  ui.element
+    .querySelector<HTMLButtonElement>('[data-practice-action="show-answer"]')!
+    .click();
+
+  expect(
+    ui.element.querySelector<HTMLElement>("#voka-review-answer")?.dataset.gloss,
+  ).toBe("native");
+});
+
+it("uses the target gloss when target is selected", async () => {
+  const { ui, token } = setup(undefined, {
+    ...config,
+    nativeLanguage: "zh",
+    glossLanguage: "target",
+  });
+  ui.practice(token, "card-1");
+  await flush();
+  ui.element
+    .querySelector<HTMLButtonElement>('[data-practice-action="show-answer"]')!
+    .click();
+
+  expect(
+    ui.element.querySelector<HTMLElement>("#voka-review-answer")?.dataset.gloss,
+  ).toBe("target");
+});
+
+it("includes scoped gloss rules in the shadow root style", () => {
+  const { root } = setup();
+
+  expect(root.querySelector("style")?.textContent).toContain(
+    scopedGlossCss(".review-view .review-answer"),
+  );
 });
 
 it("sends only review-render during a complete practice run", async () => {

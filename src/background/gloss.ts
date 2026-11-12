@@ -1,9 +1,6 @@
 import type { Call } from "./import";
-export type GlossLanguage = "native" | "target";
-export const glossRules = (mode: GlossLanguage) =>
-  mode === "native"
-    ? ".gloss-native{display:block}\n.miss-native ~ .gloss-target{display:block}"
-    : ".gloss-target{display:block}\n.miss-target ~ .gloss-native{display:block}";
+import { glossRules, type GlossLanguage } from "../gloss-rules";
+export { glossRules, type GlossLanguage } from "../gloss-rules";
 /** Preserve every byte outside the first complete VOKA marker pair. */
 export function replaceGlossCss(css: string, mode: GlossLanguage): string {
   const begin = "/* voka:begin */",
