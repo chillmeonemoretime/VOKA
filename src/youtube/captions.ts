@@ -103,7 +103,12 @@ export function cueAtTime(
   cues: readonly CaptionCue[],
   timeMs: number,
 ): CaptionCue | undefined {
-  return cues.find(
-    (cue) => cue.startMs <= timeMs && timeMs < cue.endMs,
-  );
+  // Auto-generated tracks keep a line until it scrolls off, so cues overlap;
+  // the line being spoken is the active cue that started last.
+  let current: CaptionCue | undefined;
+  for (const cue of cues) {
+    if (cue.startMs > timeMs || timeMs >= cue.endMs) continue;
+    if (!current || cue.startMs >= current.startMs) current = cue;
+  }
+  return current;
 }

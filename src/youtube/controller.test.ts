@@ -4,6 +4,7 @@ import type { ReadingSource } from "../reading-session";
 import {
   buildRefetchUrl,
   chooseEnglishTrack,
+  cueAtTime,
   parseJson3,
   type CaptionCue,
 } from "./captions";
@@ -47,6 +48,37 @@ describe("YouTube caption helpers", () => {
       ),
     ).toEqual([{ startMs: 125, endMs: 1075, text: "hello world" }]);
     expect(parseJson3("not json")).toEqual([]);
+  });
+
+  it("shows the newest line when auto-generated cues overlap", () => {
+    // Auto-generated tracks keep each line until it scrolls off, so a line's
+    // window still covers the time when the next line is being spoken.
+    const cues = parseJson3(
+      JSON.stringify({
+        events: [
+          { tStartMs: 80, dDurationMs: 4559, segs: [{ utf8: "first line" }] },
+          { tStartMs: 2350, dDurationMs: 2289, aAppend: 1, segs: [{ utf8: "\n" }] },
+          { tStartMs: 2360, dDurationMs: 4719, segs: [{ utf8: "second line" }] },
+          { tStartMs: 4640, dDurationMs: 4000, segs: [{ utf8: "third line" }] },
+        ],
+      }),
+    );
+    expect(cueAtTime(cues, 79)).toBeUndefined();
+    expect(cueAtTime(cues, 2359)?.text).toBe("first line");
+    expect(cueAtTime(cues, 2360)?.text).toBe("second line");
+    expect(cueAtTime(cues, 4000)?.text).toBe("second line");
+    expect(cueAtTime(cues, 4640)?.text).toBe("third line");
+    expect(cueAtTime(cues, 8640)).toBeUndefined();
+  });
+
+  it("keeps showing a line through a gap-free handover between cues", () => {
+    const cues: CaptionCue[] = [
+      { startMs: 0, endMs: 1000, text: "one" },
+      { startMs: 1000, endMs: 2000, text: "two" },
+    ];
+    expect(cueAtTime(cues, 999)?.text).toBe("one");
+    expect(cueAtTime(cues, 1000)?.text).toBe("two");
+    expect(cueAtTime(cues, 2000)).toBeUndefined();
   });
 
   it("prefers human English, then auto English, and skips non-English tracks", () => {
