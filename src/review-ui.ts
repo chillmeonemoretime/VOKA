@@ -7,6 +7,7 @@ import {
 } from "./reading";
 import { t } from "./shared";
 import { sanitizeCardHtml } from "./card-html";
+import { scopedGlossCss } from "./gloss-rules";
 
 type Rating = "again" | "hard" | "good" | "easy";
 type QueueItem = { token: Token; cardId: string };
@@ -38,7 +39,8 @@ export function createReviewUI(
 ) {
   const style = document.createElement("style");
   style.textContent =
-    ".review-view{border-top:1px solid #e4e8ed;margin-top:12px;padding-top:12px}.review-view[hidden]{display:none}.review-view h3{font-size:18px;margin:0 0 10px}.review-view .practice-label{position:sticky;top:0;z-index:1;background:#fff;padding:4px 0 8px;color:#566575;font-size:12px;font-weight:600}.review-view .review-question,.review-view .review-answer{padding:10px 12px;border:1px solid #e4e8ed;border-radius:8px;overflow-wrap:anywhere}.review-view .review-sentence{margin:10px 0;padding:9px 12px;background:#f5f7fa;border-radius:8px;white-space:pre-wrap}.review-view .review-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.review-view .review-status{min-height:1.4em;margin:10px 0;color:#566575}.review-view button{border:1px solid #ccd3dc;border-radius:6px;background:#fff;color:#17212b;padding:6px 10px}.review-view button:disabled{opacity:.55;cursor:wait}.review-view button[data-primary=true]{background:#285e9e;color:#fff;border-color:#285e9e}#voka-review-ui[hidden]{display:none}";
+    ".review-view{border-top:1px solid #e4e8ed;margin-top:12px;padding-top:12px}.review-view[hidden]{display:none}.review-view h3{font-size:18px;margin:0 0 10px}.review-view .practice-label{position:sticky;top:0;z-index:1;background:#fff;padding:4px 0 8px;color:#566575;font-size:12px;font-weight:600}.review-view .review-question,.review-view .review-answer{padding:10px 12px;border:1px solid #e4e8ed;border-radius:8px;overflow-wrap:anywhere}.review-view .review-sentence{margin:10px 0;padding:9px 12px;background:#f5f7fa;border-radius:8px;white-space:pre-wrap}.review-view .review-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.review-view .review-status{min-height:1.4em;margin:10px 0;color:#566575}.review-view button{border:1px solid #ccd3dc;border-radius:6px;background:#fff;color:#17212b;padding:6px 10px}.review-view button:disabled{opacity:.55;cursor:wait}.review-view button[data-primary=true]{background:#285e9e;color:#fff;border-color:#285e9e}#voka-review-ui[hidden]{display:none}" +
+    scopedGlossCss(".review-view .review-answer");
   const view = document.createElement("section");
   view.id = "voka-review-ui";
   view.className = "review-view";
@@ -170,6 +172,7 @@ export function createReviewUI(
       const answer = document.createElement("div");
       answer.id = "voka-review-answer";
       answer.className = "review-answer";
+      answer.dataset.gloss = config().nativeLanguage === "en" ? "target" : config().glossLanguage;
       answer.replaceChildren(sanitizeCardHtml(rendered.answerHtml));
       view.append(answer);
       if (sentenceOnBack) appendSentence(view);

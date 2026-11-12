@@ -341,11 +341,24 @@ try {
         .shadowRoot!.querySelector('[data-slot="review-ui"]')!;
       return {
         answer: view.querySelector("#voka-review-answer")?.textContent ?? "",
+        glosses: [...view.querySelectorAll("#voka-review-answer .gloss")].map((element) => ({
+          native: element.classList.contains("gloss-native"),
+          target: element.classList.contains("gloss-target"),
+          text: element.textContent ?? "",
+          visible: getComputedStyle(element).display !== "none",
+        })),
         ratingCount: view.querySelectorAll("[data-review-rating]").length,
         next: view.querySelector('[data-practice-action="next"]')?.textContent ?? "",
       };
     });
     assert(back.answer.length > 0, "rendered answer is missing");
+    const visibleGlosses = back.glosses.filter((gloss) => gloss.visible);
+    assert.equal(visibleGlosses.length, 1, "exactly one gloss must be visible");
+    const nativeGloss = back.glosses.find(
+      (gloss) => gloss.native && gloss.text.trim().length > 0,
+    );
+    if (nativeGloss)
+      assert(nativeGloss.visible, "non-empty native gloss must be visible");
     assert.equal(back.ratingCount, 0, "rating button appeared after answer reveal");
     assert.match(back.next, /Next|下一个/);
     await page.evaluate(() =>

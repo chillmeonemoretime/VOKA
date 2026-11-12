@@ -400,6 +400,12 @@ try {
     const view = root.querySelector("#voka-review-ui")!;
     return {
       text: root.querySelector("#voka-review-answer")?.textContent ?? "",
+      glosses: [...root.querySelectorAll("#voka-review-answer .gloss")].map((element) => ({
+        native: element.classList.contains("gloss-native"),
+        target: element.classList.contains("gloss-target"),
+        text: element.textContent ?? "",
+        visible: getComputedStyle(element).display !== "none",
+      })),
       ratings: [...view.querySelectorAll("[data-review-rating]")].map(
         (button) => (button as HTMLElement).dataset.reviewRating,
       ),
@@ -409,7 +415,16 @@ try {
     };
   });
   assert(revealed.text.includes("SYNTHETIC_NATIVE_GLOSS_0"));
-  assert(revealed.text.includes("SYNTHETIC_TARGET_GLOSS_0"));
+  const visibleGlosses = revealed.glosses.filter((gloss) => gloss.visible);
+  assert.equal(visibleGlosses.length, 1, "exactly one gloss must be visible");
+  assert(
+    visibleGlosses[0].native &&
+      visibleGlosses[0].text.includes("SYNTHETIC_NATIVE_GLOSS_0"),
+    "the native gloss must be visible",
+  );
+  const targetGloss = revealed.glosses.find((gloss) => gloss.target);
+  assert(targetGloss, "target gloss is missing");
+  assert.equal(targetGloss.visible, false, "target gloss must be hidden");
   assert.equal(revealed.ratings.length, firstPrediction.answers.length);
   firstPrediction.answers.forEach((option: any, index: number) => {
     if (option.interval !== null)

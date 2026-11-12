@@ -881,6 +881,12 @@ async function runChecks() {
         const view = root.querySelector("#voka-review-ui")!;
         return {
           answer: root.querySelector("#voka-review-answer")?.textContent ?? "",
+          glosses: [...view.querySelectorAll("#voka-review-answer .gloss")].map((element) => ({
+            native: element.classList.contains("gloss-native"),
+            target: element.classList.contains("gloss-target"),
+            text: element.textContent ?? "",
+            visible: getComputedStyle(element).display !== "none",
+          })),
           ratings: [...view.querySelectorAll("[data-review-rating]")].map(
             (button) => (button as HTMLElement).dataset.reviewRating,
           ),
@@ -890,7 +896,16 @@ async function runChecks() {
         };
       });
       assert(back.answer.includes("P1_SYNTHETIC_NATIVE_GLOSS_0"));
-      assert(back.answer.includes("P1_SYNTHETIC_TARGET_GLOSS_0"));
+      const visibleGlosses = back.glosses.filter((gloss) => gloss.visible);
+      assert.equal(visibleGlosses.length, 1, "exactly one gloss must be visible");
+      assert(
+        visibleGlosses[0].native &&
+          visibleGlosses[0].text.includes("P1_SYNTHETIC_NATIVE_GLOSS_0"),
+        "the native gloss must be visible",
+      );
+      const targetGloss = back.glosses.find((gloss) => gloss.target);
+      assert(targetGloss, "target gloss is missing");
+      assert.equal(targetGloss.visible, false, "target gloss must be hidden");
       assert.equal(back.ratings.length, prediction.answers.length);
       prediction.answers.forEach((option: any, index: number) => {
         if (option.interval != null)
@@ -1238,12 +1253,25 @@ async function runChecks() {
               .shadowRoot!.querySelector('[data-slot="review-ui"]')!;
             return {
               answer: view.querySelector("#voka-review-answer")?.textContent ?? "",
+              glosses: [...view.querySelectorAll("#voka-review-answer .gloss")].map((element) => ({
+                native: element.classList.contains("gloss-native"),
+                target: element.classList.contains("gloss-target"),
+                text: element.textContent ?? "",
+                visible: getComputedStyle(element).display !== "none",
+              })),
               label: view.querySelector(".practice-label")?.textContent ?? "",
               ratings: view.querySelectorAll("[data-review-rating]").length,
               next: view.querySelector('[data-practice-action="next"]')?.textContent ?? "",
             };
           });
           assert(back.answer.length > 0);
+          const visibleGlosses = back.glosses.filter((gloss) => gloss.visible);
+          assert.equal(visibleGlosses.length, 1, "exactly one gloss must be visible");
+          const nativeGloss = back.glosses.find(
+            (gloss) => gloss.native && gloss.text.trim().length > 0,
+          );
+          if (nativeGloss)
+            assert(nativeGloss.visible, "non-empty native gloss must be visible");
           assert.match(back.label, /Practice|练习/);
           assert.equal(back.ratings, 0);
           assert.match(back.next, /Next|下一个/);
